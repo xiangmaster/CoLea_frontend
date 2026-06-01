@@ -1,0 +1,191 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #f8fafc;
+    color: #1e293b;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@layer components {
+  /* 通用主操作按钮：蓝渐变 + 蓝色软阴影 + 右箭头 */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-gradient-to-r from-brand-600 to-blue-700 text-white rounded-xl font-medium text-sm hover:from-brand-700 hover:to-blue-800 transition-all shadow-md shadow-brand-500/25 disabled:opacity-60;
+  }
+  .btn-primary-lg {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-brand-600 to-blue-700 text-white rounded-xl font-semibold text-sm hover:from-brand-700 hover:to-blue-800 transition-all shadow-lg shadow-brand-500/30 disabled:opacity-60;
+  }
+  /* 次操作按钮 */
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-1.5 px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all;
+  }
+  /* 软风格输入：默认浅灰底，聚焦变白 + 蓝色 ring */
+  .field-soft {
+    @apply w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 focus:bg-white transition;
+  }
+
+  .nav-active {
+    background: rgba(59, 130, 246, 0.18);
+    border-left: 3px solid #60a5fa;
+  }
+  .card-hover {
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 40px -10px rgba(37, 99, 235, 0.22);
+    border-color: rgba(191, 219, 254, 1);
+  }
+  /* 软卡片：默认所有内容卡的视觉规范，比 shadow-sm 多一点蓝色暖意 */
+  .soft-card {
+    @apply bg-white rounded-2xl border border-slate-100/80 shadow-sm;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 30px -12px rgba(37, 99, 235, 0.10);
+  }
+  /* 页头：每页主标题区域用同一规范 */
+  .page-title {
+    @apply text-3xl font-bold text-slate-800 tracking-tight;
+  }
+  .page-sub {
+    @apply text-sm text-slate-500 mt-1.5;
+  }
+  /* 装饰：标题旁的渐变小条 */
+  .title-bar::before {
+    content: '';
+    display: inline-block;
+    width: 4px;
+    height: 24px;
+    border-radius: 4px;
+    margin-right: 12px;
+    background: linear-gradient(180deg, #3b82f6, #1d4ed8);
+    vertical-align: -4px;
+  }
+  .heatmap-cell {
+    width: 14px;
+    height: 14px;
+    border-radius: 2px;
+  }
+  .tab-active {
+    border-bottom: 2px solid #2563eb;
+    color: #2563eb;
+    font-weight: 600;
+  }
+  .risk-high {
+    border-left: 4px solid #e03131;
+  }
+  .risk-medium {
+    border-left: 4px solid #f59f00;
+  }
+  .risk-low {
+    border-left: 4px solid #40c057;
+  }
+  .section-header {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    color: white;
+    padding: 28px 40px;
+    border-radius: 16px;
+    margin-bottom: 24px;
+  }
+  .cursor-blink {
+    animation: blink 1s infinite;
+  }
+  .slide-in {
+    animation: slideIn 0.3s ease-out;
+  }
+  .auth-gradient {
+    background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+  }
+}
+
+@keyframes blink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* OnlyOffice iframe 充满容器 */
+.onlyoffice-shell {
+  position: relative;
+}
+.onlyoffice-shell iframe {
+  width: 100% !important;
+  height: 100% !important;
+  border: 0;
+  display: block;
+}
+
+/* Tiptap editor */
+.ProseMirror {
+  outline: none;
+  min-height: 400px;
+  line-height: 1.7;
+}
+.ProseMirror h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 1rem 0 0.5rem;
+  color: #1e293b;
+}
+.ProseMirror h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 1rem 0 0.5rem;
+  color: #334155;
+}
+.ProseMirror p {
+  margin-bottom: 0.75rem;
+  color: #475569;
+  font-size: 0.875rem;
+}
+.ProseMirror ul {
+  list-style: disc;
+  padding-left: 1.5rem;
+  font-size: 0.875rem;
+  color: #475569;
+}
+.ProseMirror ul li {
+  margin-bottom: 0.25rem;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}

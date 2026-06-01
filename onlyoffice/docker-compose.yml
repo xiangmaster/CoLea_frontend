@@ -1,0 +1,38 @@
+# OnlyOffice Document Server for CoLea local demo
+#
+# 启动：cd onlyoffice && docker compose up -d
+# 停止：cd onlyoffice && docker compose down
+# 健康检查：curl http://localhost:8080/healthcheck
+#
+# 说明：
+# - JWT_ENABLED=false 用于本地演示（生产务必开启）
+# - 端口固定 8080，前端通过 VITE_ONLYOFFICE_URL=http://localhost:8080 引用
+# - Apple Silicon (M1/M2/M3) 强制 amd64，性能稍降但镜像可用
+
+services:
+  documentserver:
+    image: onlyoffice/documentserver:latest
+    platform: linux/amd64
+    container_name: colea-onlyoffice-ds
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      - JWT_ENABLED=false
+      - USE_UNAUTHORIZED_STORAGE=true
+      - WOPI_ENABLED=false
+      # 允许 OnlyOffice 内部 axios 下载来自 host.docker.internal (192.168.65.x) 的私有 IP
+      - ALLOW_PRIVATE_IP_ADDRESS=true
+      - ALLOW_META_IP_ADDRESS=true
+    extra_hosts:
+      # 兜底：保证容器内能解析 host.docker.internal（Docker Desktop 一般自带，Linux 需要这一行）
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ds_data:/var/www/onlyoffice/Data
+      - ds_logs:/var/log/onlyoffice
+      - ds_cache:/var/lib/onlyoffice/documentserver/App_Data/cache/files
+
+volumes:
+  ds_data:
+  ds_logs:
+  ds_cache:

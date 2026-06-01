@@ -1,0 +1,38 @@
+# CoLea 演示用本地反向代理
+#
+# 启动：sudo caddy run --config Caddyfile
+# 停止：Ctrl+C 或 sudo pkill caddy
+#
+# 前提：在 /etc/hosts 已映射
+#   127.0.0.1 colea.edu.cn doc.colea.edu.cn
+# 由 scripts/setup-domain.sh 自动完成。
+
+{
+	# 关闭 admin API、不写入 access log，保持终端干净
+	admin off
+	auto_https off
+}
+
+# 主应用：走 Vite dev server
+http://colea.edu.cn {
+	# WebSocket 升级（Vite HMR 用）
+	@websockets {
+		header Connection *Upgrade*
+		header Upgrade websocket
+	}
+	reverse_proxy @websockets localhost:5173
+
+	reverse_proxy localhost:5173 {
+		header_up Host {host}
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Forwarded-Proto {scheme}
+	}
+}
+
+# 文档服务：走 OnlyOffice Document Server
+http://doc.colea.edu.cn {
+	reverse_proxy localhost:8080 {
+		header_up Host {host}
+	}
+}

@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useCourseStore } from '@/store/courseStore';
 import { useGroupStore } from '@/store/groupStore';
 import { useTaskStore } from '@/store/taskStore';
@@ -23,7 +22,16 @@ type TabId = (typeof TABS)[number]['id'];
 export function CourseDetailPage() {
   const { courseId = 'c-se' } = useParams();
   const course = useCourseStore((s) => s.courses.find((c) => c.id === courseId));
-  const [tab, setTab] = useState<TabId>('overview');
+  // tab 持久化到 URL search params，避免任何 re-mount 导致状态丢失
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab') as TabId | null;
+  const tab: TabId = tabParam && TABS.some((t) => t.id === tabParam) ? tabParam : 'overview';
+  const setTab = (t: TabId) => {
+    const next = new URLSearchParams(searchParams);
+    if (t === 'overview') next.delete('tab');
+    else next.set('tab', t);
+    setSearchParams(next, { replace: true });
+  };
 
   if (!course) {
     return <div className="p-8 text-slate-500">课程不存在</div>;

@@ -1,14 +1,14 @@
-import { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Sparkles, Plus, CheckCircle2, Loader2 } from 'lucide-react';
+import { Users, TrendingUp, Activity, Award, Crown, Layers } from 'lucide-react';
 import { useGroupStore } from '@/store/groupStore';
 import { Pill, Tag } from '@/components/ui/Tag';
-import { AvatarGroup } from '@/components/ui/Avatar';
-import { Modal } from '@/components/ui/Modal';
-import { getAllUsers } from '@/store/authStore';
-import { toast } from '@/store/toastStore';
-import { ROLE_COLOR_MAP } from '@/mocks/groups';
+import { Avatar, AvatarGroup } from '@/components/ui/Avatar';
+import { getAllUsers, useCurrentUser } from '@/store/authStore';
+import { Radar } from '@/components/charts/Radar';
 import { classNames } from '@/lib/format';
+import { useMemo } from 'react';
+
+const DIMENSIONS = ['资料检索', '内容创作', '协作沟通', '分析归纳', '汇报展示'];
 
 interface Props {
   courseId?: string;
@@ -19,212 +19,176 @@ export function GroupsPage({ courseId = 'c-se', embedded }: Props) {
   const params = useParams();
   const cid = params.courseId ?? courseId;
   const groups = useGroupStore((s) => s.groups.filter((g) => g.courseId === cid));
-  const allGroupsCount = useGroupStore((s) => s.groups.length);
-  const recommendations = useGroupStore((s) => s.recommendations);
-  const generating = useGroupStore((s) => s.generating);
-  const generate = useGroupStore((s) => s.generate);
-  const apply = useGroupStore((s) => s.applyRecommendations);
-  const create = useGroupStore((s) => s.createGroup);
   const users = getAllUsers();
-  const [algo, setAlgo] = useState('K-Means 互补匹配');
-  const [size, setSize] = useState(5);
-  const [createOpen, setCreateOpen] = useState(false);
-  const [newName, setNewName] = useState('');
+  const me = useCurrentUser();
 
-  const totalStudents = users.filter((u) => u.role === 'student' && u.courseIds?.includes(cid)).length;
-  const avgSize = groups.length ? Math.round(groups.reduce((s, g) => s + g.memberIds.length, 0) / groups.length) : 0;
-  const skillCoverage = '87%';
+  const myGroup = groups.find((g) => me && g.memberIds.includes(me.id));
+  const otherGroups = groups.filter((g) => g.id !== myGroup?.id);
+
+  const myMembers = useMemo(
+    () =>
+      myGroup
+        ? myGroup.memberIds
+            .map((id) => users.find((u) => u.id === id))
+            .filter((u): u is NonNullable<typeof u> => !!u)
+        : [],
+    [myGroup, users],
+  );
+
+  const myRadar = useMemo(() => {
+    if (!myGroup || !myMembers.length) return [];
+    const sum = [0, 0, 0, 0, 0];
+    myMembers.forEach((m) => {
+      const s = m.skills ?? [0, 0, 0, 0, 0];
+      for (let i = 0; i < 5; i++) sum[i] += s[i] * 100;
+    });
+    return DIMENSIONS.map((axis, i) => ({ axis, value: Math.round(sum[i] / myMembers.length) }));
+  }, [myGroup, myMembers]);
 
   return (
     <div className={classNames(!embedded && 'p-8 max-w-7xl mx-auto')}>
       {!embedded && (
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-slate-800 tracking-tight">小组管理</h1>
-          <p className="text-slate-500 text-sm mt-1">UC8 · 智能互补分组推荐</p>
+          <h1 className="text-3xl font-bold text-slate-800 tracking-tight">我的小组</h1>
+          <p className="text-slate-500 text-sm mt-1">UC8 · 查看你所在小组和课程内其他小组</p>
         </div>
       )}
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <KpiCell value={totalStudents} label="总学生数" />
-        <KpiCell value={groups.length || allGroupsCount} label="已创建小组" color="text-brand-600" />
-        <KpiCell value={avgSize} label="平均组员数" color="text-green-600" />
-        <KpiCell value={skillCoverage} label="技能覆盖率" color="text-purple-600" />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-slate-800">小组列表</h3>
-            <button
-              onClick={() => setCreateOpen(true)}
-              className="px-4 py-2 bg-gradient-to-r from-brand-600 to-blue-700 text-white rounded-xl shadow-md shadow-brand-500/20 text-sm font-medium hover:from-brand-700 hover:to-blue-800 flex items-center gap-1"
-            >
-              <Plus className="w-4 h-4" /> 创建小组
-            </button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {groups.map((g) => (
-              <div key={g.id} className="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-semibold text-slate-700">{g.name}</h4>
-                  <Pill color={g.health === 'healthy' ? 'green' : g.health === 'medium' ? 'yellow' : 'red'}>
-                    {g.health === 'healthy' ? '健康' : g.health === 'medium' ? '中等' : '预警'}
-                  </Pill>
-                </div>
-                <div className="mb-3">
-                  <AvatarGroup
-                    users={g.memberIds
-                      .map((id) => users.find((u) => u.id === id))
-                      .filter((u): u is NonNullable<typeof u> => !!u)
-                      .map((u) => ({ name: u.name, color: u.avatarColor }))}
-                    size={28}
-                    max={5}
-                  />
-                </div>
-                <div className="flex gap-1.5 flex-wrap">
-                  {g.roles.map((r, i) => (
-                    <Tag key={i} color={r.color as any}>{r.label}</Tag>
-                  ))}
-                </div>
-                <div className="mt-3 flex items-center gap-2 text-xs text-slate-400">
-                  <span>协作评分: <strong className="text-slate-600">{g.collaborationScore}</strong></span>
-                  <span>·</span>
-                  <span>活跃度: <strong className={g.activity === 'high' ? 'text-green-600' : g.activity === 'medium' ? 'text-yellow-600' : 'text-red-600'}>{{ high: '高', medium: '中', low: '低' }[g.activity]}</strong></span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <div className="bg-gradient-to-br from-brand-50 via-sky-50 to-blue-50 rounded-xl p-6 border border-brand-100">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white">
-                <Sparkles className="w-4 h-4" />
-              </div>
+      {/* 我的小组 */}
+      {myGroup ? (
+        <div className="bg-gradient-to-br from-brand-50 via-white to-sky-50 rounded-2xl border border-brand-100 p-6 mb-8 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-brand-200/30 rounded-full blur-3xl pointer-events-none" />
+          <div className="relative">
+            <div className="flex items-center gap-2 mb-1">
+              <Crown className="w-5 h-5 text-amber-500" />
+              <span className="text-xs font-semibold text-brand-700 uppercase tracking-wider">我的小组</span>
+            </div>
+            <div className="flex items-center justify-between flex-wrap gap-3 mb-5">
               <div>
-                <h4 className="font-semibold text-brand-800">AI 智能分组</h4>
-                <p className="text-xs text-brand-500">基于技能向量的互补匹配</p>
+                <h2 className="text-2xl font-bold text-slate-800">{myGroup.name}</h2>
+                <p className="text-sm text-slate-500 mt-1">{myMembers.length} 位成员 · 协作评分 {myGroup.collaborationScore}</p>
               </div>
+              <Pill color={myGroup.health === 'healthy' ? 'green' : myGroup.health === 'medium' ? 'yellow' : 'red'}>
+                {myGroup.health === 'healthy' ? '健康' : myGroup.health === 'medium' ? '中等' : '预警'}
+              </Pill>
             </div>
 
-            <div className="space-y-3 mb-5">
-              <div>
-                <label className="text-xs text-slate-500 mb-1 block">分组算法</label>
-                <select
-                  value={algo}
-                  onChange={(e) => setAlgo(e.target.value)}
-                  className="w-full px-3 py-2 bg-white border border-brand-200 rounded-lg text-sm"
-                >
-                  <option>K-Means 互补匹配</option>
-                  <option>随机均匀分组</option>
-                  <option>技能优先匹配</option>
-                </select>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+              <Metric icon={<TrendingUp className="w-4 h-4 text-green-500" />} label="协作评分" value={myGroup.collaborationScore} />
+              <Metric icon={<Activity className="w-4 h-4 text-brand-600" />} label="活跃度" value={{ high: '高', medium: '中', low: '低' }[myGroup.activity]} />
+              <Metric icon={<Award className="w-4 h-4 text-amber-500" />} label="组员数" value={myMembers.length} />
+              <Metric icon={<Layers className="w-4 h-4 text-purple-500" />} label="当前阶段" value={myGroup.stage ?? '—'} />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* 成员列表 */}
+              <div className="lg:col-span-2">
+                <h3 className="text-sm font-semibold text-slate-800 mb-3">小组成员</h3>
+                <div className="space-y-2">
+                  {myMembers.map((m) => {
+                    const isMe = m.id === me?.id;
+                    return (
+                      <div
+                        key={m.id}
+                        className={classNames(
+                          'flex items-center gap-3 p-3 rounded-xl border',
+                          isMe ? 'bg-brand-50 border-brand-200' : 'bg-white border-slate-100',
+                        )}
+                      >
+                        <Avatar name={m.name} color={m.avatarColor} size={36} />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-slate-800 flex items-center gap-2">
+                            {m.name}
+                            {isMe && <Pill color="blue">我</Pill>}
+                          </div>
+                          <div className="text-xs text-slate-400">{m.studentNo} · {m.account}</div>
+                        </div>
+                        <Tag color="slate">{m.skills ? DIMENSIONS[m.skills.indexOf(Math.max(...m.skills))] : '—'}</Tag>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
+
+              {/* 雷达图 */}
               <div>
-                <label className="text-xs text-slate-500 mb-1 block">每组人数</label>
-                <input
-                  type="number"
-                  min={2}
-                  max={8}
-                  value={size}
-                  onChange={(e) => setSize(Number(e.target.value))}
-                  className="w-full px-3 py-2 bg-white border border-brand-200 rounded-lg text-sm"
+                <h3 className="text-sm font-semibold text-slate-800 mb-3">小组能力雷达</h3>
+                <div className="bg-white rounded-xl border border-slate-100 p-3">
+                  {myRadar.length > 0 ? <Radar data={myRadar} height={200} /> : <div className="text-xs text-slate-400 text-center py-12">无数据</div>}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-amber-50 border border-amber-100 rounded-2xl p-6 mb-8 flex items-start gap-3">
+          <Users className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <div className="text-sm font-semibold text-amber-800">你还没有加入该课程的小组</div>
+            <p className="text-xs text-amber-700 mt-1">教师会根据 AI 互补分组算法把你分配到合适的小组，或你可以在确认分组方案后等候通知。</p>
+          </div>
+        </div>
+      )}
+
+      {/* 课程内其他小组 */}
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-slate-800">课程内其他小组</h3>
+        <span className="text-xs text-slate-400">{otherGroups.length} 个</span>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {otherGroups.map((g) => {
+          const hours = g.lastActiveHoursAgo ?? 24;
+          const lastActiveText =
+            hours < 1 ? '刚刚有人活动' : hours < 24 ? `${Math.round(hours)} 小时前` : `${Math.round(hours / 24)} 天前`;
+          return (
+            <div key={g.id} className="bg-white rounded-2xl border border-slate-100/80 shadow-sm p-5">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-semibold text-slate-800">{g.name}</h4>
+                <Pill color={g.health === 'healthy' ? 'green' : g.health === 'medium' ? 'yellow' : 'red'}>
+                  {g.health === 'healthy' ? '健康' : g.health === 'medium' ? '中等' : '预警'}
+                </Pill>
+              </div>
+              <div className="mb-3">
+                <AvatarGroup
+                  users={g.memberIds
+                    .map((id) => users.find((u) => u.id === id))
+                    .filter((u): u is NonNullable<typeof u> => !!u)
+                    .map((u) => ({ name: u.name, color: u.avatarColor }))}
+                  size={28}
+                  max={5}
                 />
               </div>
-            </div>
-
-            <button
-              disabled={generating}
-              onClick={() => generate({ algorithm: algo, sizePerGroup: size, courseId: cid })}
-              className="w-full py-2.5 bg-gradient-to-r from-brand-600 to-blue-700 text-white rounded-xl shadow-md shadow-brand-500/20 text-sm font-medium hover:from-brand-700 hover:to-blue-800 disabled:opacity-60 flex items-center justify-center gap-2"
-            >
-              {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-              {generating ? '正在计算最优分组…' : '生成推荐方案'}
-            </button>
-
-            {recommendations.length > 0 && (
-              <div className="mt-5 pt-5 border-t border-brand-200">
-                <h5 className="text-sm font-semibold text-brand-800 mb-3">推荐方案预览</h5>
-                <div className="space-y-2">
-                  {recommendations.map((r, i) => (
-                    <div key={r.id} className="bg-white rounded-lg p-3 border border-brand-100">
-                      <div className="text-xs font-medium text-slate-700 mb-1">推荐组 {i + 1}</div>
-                      <div className="flex gap-1 flex-wrap">
-                        {r.rolesSummary.map((role, idx) => (
-                          <span key={idx} className={classNames('px-1.5 py-0.5 rounded text-xs', ROLE_COLOR_MAP[Object.keys(ROLE_COLOR_MAP)[idx % 5]] ?? 'bg-slate-50 text-slate-600')}>
-                            {role}
-                          </span>
-                        ))}
-                      </div>
-                      <div className="text-xs text-green-600 mt-1">互补度: {r.complementarity}%</div>
-                    </div>
-                  ))}
+              {g.stage && (
+                <div className="text-xs text-slate-500 mb-1.5 flex items-center gap-1.5">
+                  <Layers className="w-3.5 h-3.5 text-slate-400" /> 当前阶段：{g.stage}
+                  {typeof g.progress === 'number' && (
+                    <span className="ml-1">· 进度 {g.progress}%</span>
+                  )}
                 </div>
-                <button
-                  onClick={() => {
-                    apply(cid);
-                    toast.success('已应用推荐方案');
-                  }}
-                  className="w-full mt-3 py-2 bg-green-50 text-green-700 rounded-lg text-xs font-medium border border-green-200 hover:bg-green-100 flex items-center justify-center gap-1"
-                >
-                  <CheckCircle2 className="w-3.5 h-3.5" /> 确认并应用方案
-                </button>
+              )}
+              {g.recentHighlight && (
+                <div className="text-xs text-slate-500 mb-3 line-clamp-1 italic">"{g.recentHighlight}"</div>
+              )}
+              <div className="flex items-center gap-3 text-xs text-slate-400 flex-wrap">
+                <span>协作评分 <strong className="text-slate-700">{g.collaborationScore}</strong></span>
+                <span>·</span>
+                <span>提交 <strong className="text-slate-700">{g.totalSubmissions ?? '—'}</strong> 次</span>
+                <span>·</span>
+                <span>上次活动 <strong className={hours < 24 ? 'text-emerald-600' : hours < 72 ? 'text-amber-600' : 'text-red-500'}>{lastActiveText}</strong></span>
               </div>
-            )}
-          </div>
-        </div>
+            </div>
+          );
+        })}
       </div>
-
-      <Modal
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
-        title="创建小组"
-        footer={
-          <>
-            <button onClick={() => setCreateOpen(false)} className="px-3 py-1.5 text-sm text-slate-600 hover:text-slate-800">
-              取消
-            </button>
-            <button
-              onClick={() => {
-                if (!newName) return toast.error('请填写组名');
-                create({
-                  courseId: cid,
-                  name: newName,
-                  memberIds: [],
-                  roles: [],
-                  collaborationScore: 80,
-                  activity: 'medium',
-                  health: 'medium',
-                });
-                toast.success('小组已创建');
-                setNewName('');
-                setCreateOpen(false);
-              }}
-              className="px-4 py-1.5 text-sm bg-gradient-to-r from-brand-600 to-blue-700 text-white rounded-xl shadow-md shadow-brand-500/20 hover:from-brand-700 hover:to-blue-800"
-            >
-              创建
-            </button>
-          </>
-        }
-      >
-        <label className="block text-xs text-slate-500 mb-1">小组名称</label>
-        <input
-          value={newName}
-          onChange={(e) => setNewName(e.target.value)}
-          placeholder="例如：Epsilon 组"
-          className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30"
-        />
-      </Modal>
     </div>
   );
 }
 
-function KpiCell({ value, label, color = 'text-slate-800' }: { value: string | number; label: string; color?: string }) {
+function Metric({ icon, label, value }: { icon: React.ReactNode; label: string; value: string | number }) {
   return (
-    <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 text-center">
-      <div className={`text-2xl font-bold ${color}`}>{value}</div>
-      <div className="text-xs text-slate-400 mt-1">{label}</div>
+    <div className="bg-white/80 backdrop-blur-sm rounded-xl p-3 border border-slate-100/80">
+      <div className="text-xs text-slate-500 flex items-center gap-1.5">{icon} {label}</div>
+      <div className="text-lg font-bold text-slate-800 mt-1">{value}</div>
     </div>
   );
 }

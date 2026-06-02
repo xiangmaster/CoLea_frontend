@@ -15,12 +15,14 @@ const now = Date.now();
 const ago = (m: number) => new Date(now - m * 60 * 1000).toISOString();
 
 export const SEED_ACTIVITIES: Activity[] = [
-  { id: 'a-1', kind: 'submit', actorName: '张同学', actorColor: 'bg-blue-500', text: '提交了', targetLabel: '系统设计文档', link: '/app/tasks/t-design', createdAt: ago(2) },
-  { id: 'a-2', kind: 'edit', actorName: '李同学', actorColor: 'bg-green-500', text: '编辑了', targetLabel: '需求分析报告', link: '/app/docs/d-req-v2', createdAt: ago(15) },
-  { id: 'a-3', kind: 'join', actorName: '王同学', actorColor: 'bg-purple-500', text: '加入了', targetLabel: 'Alpha 组', link: '/app/courses/c-se/groups', createdAt: ago(60) },
-  { id: 'a-4', kind: 'grade', actorName: '李教授', actorColor: 'bg-brand-600', text: '评分了', targetLabel: '需求分析报告 (Alpha 组 92)', link: '/teacher/grading', createdAt: ago(120) },
-  { id: 'a-5', kind: 'comment', actorName: '陈同学', actorColor: 'bg-cyan-500', text: '评论了', targetLabel: '系统设计文档', link: '/app/docs/d-design-v1', createdAt: ago(200) },
-  { id: 'a-6', kind: 'attach', actorName: '杨同学', actorColor: 'bg-violet-500', text: '在任务中上传了附件', targetLabel: '原型设计 — 高保真 v2.zip', link: '/app/tasks/t-proto', createdAt: ago(420) },
+  { id: 'a-1', kind: 'submit', actorName: '张同学', actorColor: 'bg-blue-500', text: '代表 Alpha 组提交了', targetLabel: '系统设计文档', link: '/app/tasks/t-design', createdAt: ago(2) },
+  { id: 'a-2', kind: 'edit', actorName: '李同学', actorColor: 'bg-green-500', text: '编辑了', targetLabel: '需求分析报告 §2.1', link: '/app/docs/d-req-v2', createdAt: ago(15) },
+  { id: 'a-3', kind: 'grade', actorName: '李教授', actorColor: 'bg-brand-600', text: '评分了', targetLabel: 'Alpha 组 系统设计文档 (89)', link: '/teacher/grading', createdAt: ago(38) },
+  { id: 'a-4', kind: 'comment', actorName: '王同学', actorColor: 'bg-purple-500', text: '@ 张同学 在', targetLabel: '系统设计文档 §4 部署视图', link: '/app/docs/d-design-v1', createdAt: ago(60) },
+  { id: 'a-5', kind: 'grade', actorName: '李教授', actorColor: 'bg-brand-600', text: '评分了', targetLabel: 'Alpha 组 需求分析 (92)', link: '/teacher/grading', createdAt: ago(120) },
+  { id: 'a-6', kind: 'edit', actorName: '张同学', actorColor: 'bg-blue-500', text: '修改了', targetLabel: 'Alpha 组 例会纪要', link: '/app/docs/d-meeting', createdAt: ago(180) },
+  { id: 'a-7', kind: 'comment', actorName: '陈同学', actorColor: 'bg-cyan-500', text: '回复了评论', targetLabel: '系统设计文档 §2.3', link: '/app/docs/d-design-v1', createdAt: ago(260) },
+  { id: 'a-8', kind: 'attach', actorName: '赵同学', actorColor: 'bg-orange-500', text: '在 Alpha 组上传了', targetLabel: 'Sprint1 任务拆分.xlsx', link: '/app/tasks/t-code', createdAt: ago(380) },
 ];
 
 export const LIVE_ACTIVITY_POOL: Omit<Activity, 'id' | 'createdAt'>[] = [

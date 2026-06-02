@@ -9,7 +9,7 @@ export interface User {
   studentNo?: string;
   staffNo?: string;
   avatarColor: string;
-  /** 技能向量：用于 K-Means 智能分组（前端/后端/设计/PM/测试） */
+  /** 学习画像向量（5 维，课程无关）：资料检索 / 内容创作 / 协作沟通 / 分析归纳 / 汇报展示。用于 K-Means 智能分组。 */
   skills?: [number, number, number, number, number];
   /** 学生所属课程 ID 列表 */
   courseIds?: string[];

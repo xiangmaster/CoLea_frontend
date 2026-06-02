@@ -160,4 +160,14 @@ export const SEED_SUBMISSIONS: Submission[] = [
     submittedAt: '2026-05-29T17:40:00',
     status: 'submitted',
   },
+  {
+    id: 's-code-alpha',
+    groupId: 'g-alpha',
+    groupName: 'Alpha 组',
+    taskId: 't-code',
+    content: 'Alpha 组 Sprint 1 阶段性提交：张同学完成 JWT 中间件 + 单元测试（覆盖率 82%），李同学完成课程列表 API 与前端联调，本周末同步推进任务模块。',
+    files: [{ id: 'f-code2', name: 'Alpha-Sprint1阶段交付.docx', size: '2.1 MB', uploadedAt: '2026-05-30T20:15:00', uploader: '张同学', docxPath: '/sample/colea-meeting-notes.docx' }],
+    submittedAt: '2026-05-30T20:15:00',
+    status: 'submitted',
+  },
 ];
